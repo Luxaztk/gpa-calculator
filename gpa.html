@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>GPA Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .subject-group {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+
+        input,
+        select {
+            margin: 5px;
+            padding: 5px;
+        }
+
+        .btn {
+            margin-top: 10px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4285f4;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            background-color: crimson;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>HUST - GPA Calculator</h2>
+
+    <form id="gpa-form">
+        <div id="subject-container">
+            <!-- Các group môn học sẽ thêm tại đây -->
+        </div>
+        <button type="button" class="btn" onclick="addSubject()">➕ Thêm môn học</button>
+        <button type="button" class="btn" onclick="calculateGPA()">🧮 Tính GPA</button>
+    </form>
+
+    <h3 id="result"></h3>
+
+    <script>
+        let subjectCount = 0;
+
+        function addSubject() {
+            subjectCount++;
+            const container = document.getElementById("subject-container");
+
+            const div = document.createElement("div");
+            div.className = "subject-group";
+            div.innerHTML = `
+        <h4>Môn ${subjectCount}</h4>
+        Điểm giữa kỳ: <input type="number" name="midterm[]" step="0.1" min="0" max="10" required>
+        Điểm cuối kỳ: <input type="number" name="final[]" step="0.1" min="0" max="10" required>
+        Hệ số:
+        <select name="weight[]">
+            <option value="3-7">3 - 7</option>
+            <option value="4-6">4 - 6</option>
+            <option value="5-5">5 - 5</option>
+        </select>
+        Số tín chỉ: <input type="number" name="credits[]" min="1" required>
+        <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">❌ Xóa</button>
+      `;
+            container.appendChild(div);
+        }
+
+        function convertTo4Scale(score10) {
+            if (score10 >= 8.5 && score10 <= 10) return { point: 4.0, letter: "A" };
+            if (score10 >= 8.0 && score10 < 8.5) return { point: 3.5, letter: "B+" };
+            if (score10 >= 7.0 && score10 < 8.0) return { point: 3.0, letter: "B" };
+            if (score10 >= 6.5 && score10 < 7.0) return { point: 2.5, letter: "C+" };
+            if (score10 >= 5.5 && score10 < 6.5) return { point: 2.0, letter: "C" };
+            if (score10 >= 5.0 && score10 < 5.5) return { point: 1.5, letter: "D+" };
+            if (score10 >= 4.0 && score10 < 5.0) return { point: 1.0, letter: "D" };
+            return { point: 0.0, letter: "F" };
+        }
+
+        function calculateGPA() {
+            const midterms = document.getElementsByName("midterm[]");
+            const finals = document.getElementsByName("final[]");
+            const weights = document.getElementsByName("weight[]");
+            const credits = document.getElementsByName("credits[]");
+
+            let totalCredits = 0;
+            let totalPoints = 0;
+            let resultTable = `
+                <table border="1" cellpadding="8" cellspacing="0">
+                    <tr>
+                        <th>Môn</th>
+                        <th>QT</th>
+                        <th>CK</th>
+                        <th>Điểm hệ 10</th>
+                        <th>Điểm chữ</th>
+                        <th>Điểm hệ 4</th>
+                        <th>Tín chỉ</th>
+                    </tr>
+            `;
+
+            for (let i = 0; i < midterms.length; i++) {
+                const mid = parseFloat(midterms[i].value);
+                const fin = parseFloat(finals[i].value);
+                const credit = parseFloat(credits[i].value);
+                const weight = weights[i].value;
+
+                let score10 = 0;
+                switch (weight) {
+                    case "3-7":
+                        score10 = mid * 0.3 + fin * 0.7;
+                        break;
+                    case "4-6":
+                        score10 = mid * 0.4 + fin * 0.6;
+                        break;
+                    case "5-5":
+                        score10 = mid * 0.5 + fin * 0.5;
+                        break;
+                }
+
+                const { point: score4, letter } = convertTo4Scale(score10);
+                totalPoints += score4 * credit;
+                totalCredits += credit;
+
+                resultTable += `
+                    <tr>
+                        <td>Môn ${i + 1}</td>
+                        <td>${mid}</td>
+                        <td>${fin}</td>
+                        <td>${score10.toFixed(2)}</td>
+                        <td>${letter}</td>
+                        <td>${score4.toFixed(1)}</td>
+                        <td>${credit}</td>
+                    </tr>
+                `;
+            }
+
+            resultTable += `</table>`;
+
+            const gpa = totalCredits ? (totalPoints / totalCredits).toFixed(2) : 0;
+            document.getElementById("result").innerHTML = `
+                <p>🎯 GPA của bạn là: <strong>${gpa} / 4.0</strong></p>
+                <h4>📋 Bảng chi tiết:</h4>
+                ${resultTable}
+            `;
+        }
+
+        // Thêm môn đầu tiên khi trang load
+        window.onload = addSubject;
+    </script>
+</body>
+
+</html>
